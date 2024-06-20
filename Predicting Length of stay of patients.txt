@@ -1,0 +1,22 @@
+/* Import the dataset */
+libname healthdata '/path/to/healthdata';
+
+/* Data preparation: Flag readmission within 30 days */
+data healthdata.readmission_flag;
+    set healthdata.patients;
+    if discharge_date - admission_date <= 30 then readmit_30 = 1;
+    else readmit_30 = 0;
+run;
+
+/* Descriptive statistics */
+proc means data=healthdata.readmission_flag n mean std min max;
+    var age length_of_stay total_charges;
+    class readmit_30;
+run;
+
+/* Logistic regression to identify factors influencing readmission */
+proc logistic data=healthdata.readmission_flag;
+    class gender (param=ref ref='Male') 
+          comorbidities (param=ref ref='None');
+    model readmit_30(event='1') = age gender length_of_stay comorbidities total_charges;
+run;

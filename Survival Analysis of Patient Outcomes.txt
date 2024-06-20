@@ -1,0 +1,22 @@
+/* Import the dataset */
+libname healthdata '/path/to/healthdata';
+
+/* Data preparation: Ensure proper date formats */
+data healthdata.survival_data;
+    set healthdata.patients;
+    format admission_date date9. discharge_date date9.;
+    survival_time = discharge_date - admission_date;
+run;
+
+/* Kaplan-Meier survival estimate */
+proc lifetest data=healthdata.survival_data plots=(survival);
+    time survival_time*status(0);
+    strata treatment_group;
+run;
+
+/* Cox proportional hazards model */
+proc phreg data=healthdata.survival_data;
+    class gender (ref='Male') comorbidities (ref='None');
+    model survival_time*status(0) = age gender comorbidities treatment_group;
+    hazardratio 'Gender' gender / cl=both;
+run;
